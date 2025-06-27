@@ -1,6 +1,7 @@
+use crate::base64::decode_iterator::DecodeBase64IterExt;
 use crate::base64::encode_iterator::EncodeBase64IterExt;
-use crate::base64::utils::decode_chunk;
 
+pub mod decode_iterator;
 pub mod encode_iterator;
 pub mod utils;
 
@@ -9,19 +10,7 @@ pub fn encode(buffer: &[u8]) -> Box<[u8]> {
 }
 
 pub fn decode(buffer: &[u8]) -> Box<[u8]> {
-    let mut decoded = Vec::new();
-    for chunk in buffer.chunks(4) {
-        if let Some([b1, b2, b3]) = decode_chunk(chunk) {
-            decoded.push(b1.unwrap());
-            if let Some(b2) = b2 {
-                decoded.push(b2);
-            }
-            if let Some(b3) = b3 {
-                decoded.push(b3);
-            }
-        }
-    }
-    decoded.into_boxed_slice()
+    buffer.iter().decode_base64_iter().flatten().collect()
 }
 
 #[cfg(test)]

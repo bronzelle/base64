@@ -1,3 +1,5 @@
+use std::{f32::consts::E, path::Iter};
+
 const BASE64_MAP: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 const INVALID: u8 = 255;
@@ -83,6 +85,54 @@ fn encode_chunk(chunk: &[u8]) -> [u8; 4] {
     [b1, b2, b3, b4]
 }
 
+struct EncodeBase64Iter<I: Iterator<Item = u8>> {
+    iterator: I,
+}
+
+impl<I: Iterator<Item = u8>> EncodeBase64Iter<I> {
+    pub fn new(iterator: I) -> Self {
+        Self { iterator }
+    }
+}
+
+trait EncodeBase64IterExt: Iterator<Item = u8> {
+    fn encode_base64_iter(self) -> EncodeBase64Iter<Self>
+    where
+        Self: Sized,
+    {
+        EncodeBase64Iter::new(self)
+    }
+}
+
+impl<I: Iterator<Item = u8>> EncodeBase64IterExt for I {}
+
+impl<I: Iterator<Item = u8>> Iterator for EncodeBase64Iter<I> {
+    type Item = [u8; 4];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut buffer = [0u8; 3];
+        let mut len = 0;
+        loop {
+            match self.iterator.next() {
+                None => {
+                    if len == 0 {
+                        return None;
+                    } else {
+                        return Some(encode_chunk(&buffer[0..len]));
+                    }
+                }
+                Some(b) => {
+                    buffer[len] = b;
+                    len += 1;
+                    if len == 3 {
+                        return Some(encode_chunk(&buffer));
+                    }
+                }
+            }
+        }
+    }
+}
+
 fn encode(buffer: &[u8]) -> Box<[u8]> {
     let mut b64 = Vec::new();
     for group in buffer.chunks(3) {
@@ -108,7 +158,10 @@ fn decode(buffer: &[u8]) -> Box<[u8]> {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let buffer = b"testing a long value";
+    let base_64 = encode(buffer);
+    let decoded = decode(base_64.as_ref());
+    assert_eq!(decoded.as_ref(), buffer);
 }
 
 #[cfg(test)]
@@ -164,5 +217,12 @@ mod tests {
     fn test_decode() {
         let base_64 = decode(b"dGVzdGluZyBhIGxvbmcgdmFsdWU=");
         assert_eq!(base_64.as_ref(), b"testing a long value");
+    }
+
+    #[test]
+    fn test_encode_iterator() {
+        let buffer = b"testing a long value";
+        let base_64: [u8] = buffer.into_iter().encode_base64_iter().flatten().collect();
+        assert_eq!(base_64.as_ref(), b"dGVzdGluZyBhIGxvbmcgdmFsdWU=");
     }
 }

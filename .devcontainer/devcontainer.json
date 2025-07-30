@@ -1,0 +1,30 @@
+{
+  "name": "Rust Dev Container",
+  "build": {
+    "dockerfile": "Containerfile"
+  },
+
+  // Configure tool-specific properties.
+  "customizations": {
+    // Configure properties specific to VS Code.
+    "vscode": {
+      "settings": {
+        "lldb.executable": "/usr/bin/lldb"
+      },
+
+      // Add the IDs of extensions you want installed when the container is created.
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
+        "serayuzgur.crates",
+        "vadimcn.vscode-lldb"
+      ]
+    }
+  },
+
+  // Use 'postCreateCommand' to run commands after the container is created.
+  // "postCreateCommand": "rustc --version",
+
+  // Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+  "remoteUser": "vscode"
+}
